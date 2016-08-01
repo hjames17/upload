@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.Calendar;
@@ -43,7 +47,7 @@ public class Controller implements InitializingBean{
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value = "/upload/image", method = RequestMethod.POST, consumes = "application/json", produces = MediaType.TEXT_PLAIN_VALUE)
+    @RequestMapping(value = "/upload/image", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     String uploadImage(@RequestBody Base64ImageForm form, HttpServletResponse response) throws Exception{
 
 
@@ -51,19 +55,59 @@ public class Controller implements InitializingBean{
         //TODO :命名规则可以配置
         String fileName = String.format("%s%s.%s", System.currentTimeMillis(), Thread.currentThread().getId(), form.getType());
         //文件夹按照年＋月的格式生成
+        //文件夹按照年＋月的格式生成
         String folderName = String.format("%s%02d", Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH) + 1);
 
         //create folder if not exists
         File directory = new File(imageLocation, folderName);
         if(!directory.exists()) {
+            log.debug("creating directory {}", directory.getAbsolutePath());
             directory.mkdirs();
         }
 
-        fileUploadService.uploadBase64Image(form, imageLocation + "/" + folderName, fileName);
+        try {
+            fileUploadService.uploadBase64Image(form, imageLocation + "/" + folderName, fileName);
+        }catch (Exception e){
+            log.error("保存图片{}失败 : {}", imageLocation + "/" + folderName + fileName, e.getMessage());
+            throw new Exception("上传图片失败");
+        }
 
         return imageFolder + "/" + folderName + "/" + fileName;
     }
 
+    @Autowired
+    CommonsMultipartResolver multipartResolver;
+    /**
+     * form-data 格式提交图片
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/upload/image", method = RequestMethod.POST, consumes = "multipart/form-data", produces = MediaType.TEXT_PLAIN_VALUE)
+    String uploadImage(HttpServletRequest request, HttpServletResponse response) throws Exception{
+
+        MultipartHttpServletRequest multipartRequest;
+        response.setHeader("Content-Type", "application/json;charset=UTF-8");
+        if(request instanceof MultipartHttpServletRequest){
+            //已经被spring框架进行过转化，成为multipartrequest了，不要再转化一次，否则会出错，无法获取出内容
+            multipartRequest = (MultipartHttpServletRequest)request;
+        }else{
+            //转换成多部分request
+            multipartRequest = multipartResolver.resolveMultipart(request);
+        }
+
+        MultipartFile file = multipartRequest.getFile("file");
+
+        //TODO 文件保存不成功
+        String filePath = String.format("%s/%s", imageLocation, file.getOriginalFilename());
+        File saveFile = new File(filePath);
+
+        //保存...
+        file.transferTo(saveFile);
+
+        return imageFolder + "/" +filePath;
+    }
 
     @ResponseBody
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = MediaType.TEXT_PLAIN_VALUE)
@@ -71,7 +115,7 @@ public class Controller implements InitializingBean{
 
         log.debug("entry");
 
-        return "ok";
+        return "upload-1.0";
     }
 //    @ResponseBody
 //    @RequestMapping(value = "/test", method = RequestMethod.POST, consumes = {"application/json"})

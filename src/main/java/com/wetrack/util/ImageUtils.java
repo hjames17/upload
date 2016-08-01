@@ -79,6 +79,7 @@ public class ImageUtils {
         File f = new File(filePath, fileName);
         f.setLastModified(System.currentTimeMillis());
         ImageIO.write(targetImage, type, f);
+        logger.info("image {} saved", f.getAbsolutePath());
 
     }
 

@@ -17,7 +17,7 @@
                 <!-- 这里支持多种寻址方式：classpath和file -->
                 <!--<value>classpath:/conf/weixin.properties</value>-->
                 <!--<value>classpath:/conf/redis.conf</value>-->
-                <value>WEB-INF/params.conf</value>
+                <value>classpath*:/params.conf</value>
                 <!-- 推荐使用file的方式引入，这样可以将配置和代码分离 -->
                 <!--<value>file:/opt/demo/config.properties/demo-mq.properties</value>-->
             </list>
@@ -54,5 +54,8 @@
             </props>
         </property>
     </bean>
+
+    <bean id="multipartResolver" class = "org.springframework.web.multipart.commons.CommonsMultipartResolver" p:maxUploadSize="104857600"></bean>
+
 
 </beans>
