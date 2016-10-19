@@ -55,7 +55,6 @@ public class Controller implements InitializingBean{
         //TODO :命名规则可以配置
         String fileName = String.format("%s%s.%s", System.currentTimeMillis(), Thread.currentThread().getId(), form.getType());
         //文件夹按照年＋月的格式生成
-        //文件夹按照年＋月的格式生成
         String folderName = String.format("%s%02d", Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH) + 1);
 
         //create folder if not exists
